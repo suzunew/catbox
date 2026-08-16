@@ -25,12 +25,17 @@ app.get('/', async (req, res) => {
       return res.status(catboxResponse.status).send(`Failed to fetch from Catbox. Status: ${catboxResponse.status}`);
     }
 
-    // 4. Content-Typeの引き継ぎ
-    const contentType = catboxResponse.headers.get('content-type') || 'application/octet-stream';
+    // 4. Content-Typeの調整（HTMLファイルの場合は強制的にtext/htmlにする）
+    let contentType = catboxResponse.headers.get('content-type') || 'application/octet-stream';
+    
+    // 拡張子が .html の場合、あるいはCatboxがtext/plainを返してきた場合への対策
+    if (fileId.endsWith('.html') || fileId.endsWith('.htm')) {
+      contentType = 'text/html; charset=utf-8';
+    }
+
     res.setHeader('Content-Type', contentType);
 
-    // 5. データのストリーミング
-    // バッファを生成してレスポンスとして返す
+    // 5. データのストリーミング（バッファ取得して送信）
     const buffer = await catboxResponse.buffer();
     
     return res.send(buffer);
